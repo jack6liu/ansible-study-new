@@ -1,0 +1,73 @@
+---
+# file: roles/fabric-orderer/tasks/main.yml
+#
+# copy: make sure directories exists
+- name: fabric-orderer | make sure direcoties needed by fabric-orderer exists
+  file:
+    path: "/hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - restore
+    - configtx
+    - data
+
+# copy: copy crypto for fabric-orderer
+- name: fabric-orderer | copy crypto for fabric-orderer
+  copy:
+    src: "{{ orderer_org_id | lower }}/orderers/{{ inventory_hostname|lower|replace('-','_') }}/"
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/configtx/
+    owner: root
+    group: root
+    mode: 0644
+
+# template: copy env_file for fabric-orderer
+- name: fabric-orderer | copy env_file for fabric-orderer
+  template:
+    src: env_file.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+
+# docker_container: launch fabric-orderer
+- name: fabric-orderer | launch fabric-orderer
+  docker_container:
+    name: "{{ inventory_hostname|lower|replace('-','_') }}"
+    hostname: "{{ inventory_hostname|lower|replace('-','_') }}"
+    image: "{{ hfc_images.orderer.tags.0 }}"
+    env_file: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+    volumes:
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/configtx/:/etc/hyperledger/configtx/
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/data/:/var/hyperledger/
+    ports:
+      - "0.0.0.0:{{ orderer_expose_port }}:{{ orderder_listen_port }}"
+    command: orderer
+    dns_servers:
+      - "{{ hostvars[groups['dns-server'].0].ansible_host }}"
+      - "{{ hostvars[groups['dns-server'].1].ansible_host }}"
+    dns_search_domains:
+      - "{{ dnsmasq_domain }}"
+    labels:
+      com.jcloud.group: "fabric"
+      com.jcloud.nodetype: "orderer"
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for fabric-orderer
+- name: fabric-orderer | generate restore script for fabric-orderer
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/run-{{ inventory_hostname|lower|replace('-','_') }}.sh
+    mode: 0755
+
+# cron: setup cron jobs for backup of fabric-orderer
+#       ONLY satinize the file name for /etc/cron.d, cause '.' is not supported!!
+- name: fabric-orderer | setup cron jobs for backup of fabric-orderer
+  cron:
+    name: backup /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}
+    minute: "{{ ( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ (( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 3) + 1 }}"
+    user: root
+    job: "/usr/local/bin/fabric-backup.sh {{ inventory_hostname|lower|replace('-','_') }}"
+    cron_file: "{{ inventory_hostname|lower|replace('-','_')|replace('.','_') }}-backup"

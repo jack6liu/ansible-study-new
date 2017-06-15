@@ -1,0 +1,38 @@
+---
+# file: roles/fabric-common/defaults/main.yml
+#
+# hfc_images used in tasks
+#
+#   MUST:
+#     - tags, 
+#         - latest tags must be the first one, which is used by running docker containers
+#         - if no tags, must put `[]` due to the playbook need an empty list value
+#
+hfc_images:
+  couchdb:
+    image: registry.hfc.test.io:5000/fabric/fabric-couchdb:x86_64-1.0.0-snapshot-56b6d12
+    tags: 
+      - hyperledger/fabric-couchdb:latest
+  baseos:
+    image: hyperledger/fabric-baseos:x86_64-0.3.0
+    tags: []
+  baseimage:
+    image: hyperledger/fabric-baseimage:x86_64-0.3.0
+    tags: []
+  ca:
+    image: registry.hfc.test.io:5000/fabric/fabric-ca:x86_64-1.0.0-snapshot-f0f86b7
+    tags: 
+      - hyperledger/fabric-ca:latest
+  ccenv:
+    image: registry.hfc.test.io:5000/fabric/fabric-ccenv:x86_64-1.0.0-snapshot-56b6d12
+    tags: 
+      - hyperledger/fabric-ccenv:latest
+      - hyperledger/fabric-ccenv:x86_64-1.0.0-snapshot-56b6d12
+  orderer:
+    image: registry.hfc.test.io:5000/fabric/fabric-orderer:x86_64-1.0.0-snapshot-56b6d12
+    tags: 
+      - hyperledger/fabric-orderer:latest
+  peer:
+    image: registry.hfc.test.io:5000/fabric/fabric-peer:x86_64-1.0.0-snapshot-56b6d12
+    tags: 
+      - hyperledger/fabric-peer:latest

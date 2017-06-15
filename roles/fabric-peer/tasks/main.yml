@@ -1,0 +1,77 @@
+---
+# file: roles/fabric-peer/tasks/main.yml
+# make sure directories exists
+- name: fabric-peer | make sure direcoties needed by fabric-peer exists
+  file:
+    path: "/hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - restore
+    - configtx
+    - data
+
+# copy crypto files for fabric-peer
+- name: fabric-peer | copy crypto for fabric-peer
+  copy:
+    src: "{{ peer_org_id | lower }}/peers/{{ inventory_hostname|lower|replace('-','_') }}/"
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/configtx/
+    owner: root
+    group: root
+    mode: 0644
+
+# template: copy env_file for fabric-peer
+- name: fabric-peer | copy env_file for fabric-peer
+  template:
+    src: env_file.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+
+# docker_container: start containers of fabric-peer
+- name: fabric-peer | launch fabric-peer
+  docker_container:
+    name: "{{ inventory_hostname|lower|replace('-','_') }}"
+    hostname: "{{ inventory_hostname|lower|replace('-','_') }}"
+    image: "{{ hfc_images.peer.tags.0 }}"
+    env_file: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+    volumes:
+      - /var/run/:/host/var/run/
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/configtx/:/etc/hyperledger/configtx/
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/data/:/var/hyperledger/
+    ports:
+      - "0.0.0.0:{{ peer_expose_listen_port }}:{{ peer_listen_port }}"
+      - "0.0.0.0:{{ peer_expose_events_port }}:{{ peer_events_port }}"
+      - "0.0.0.0:6060:6060"
+    command:
+      peer node start --peer-defaultchain=false
+    dns_servers:
+      - "{{ hostvars[groups['dns-server'].0].ansible_host }}"
+      - "{{ hostvars[groups['dns-server'].1].ansible_host }}"
+    dns_search_domains:
+      - "{{ dnsmasq_domain }}"
+    labels:
+      com.jcloud.group: "fabric"
+      com.jcloud.nodetype: "peer"
+    #privileged: yes
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for fabric-peer
+- name: fabric-peer | generate restore script for fabric-peer
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/run-{{ inventory_hostname|lower|replace('-','_') }}.sh
+    mode: 0755
+
+# cron: setup cron jobs for backup of fabric-peer
+#       ONLY satinize the file name for /etc/cron.d, cause '.' is not supported!!
+- name: fabric-peer | setup cron jobs for backup of fabric-peer
+  cron:
+    name: backup /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}
+    minute: "{{ ( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ (( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 3) + 1 }}"
+    user: root
+    job: "/usr/local/bin/fabric-backup.sh {{ inventory_hostname|lower|replace('-','_') }}"
+    cron_file: "{{ inventory_hostname|lower|replace('-','_')|replace('.','_') }}-backup"

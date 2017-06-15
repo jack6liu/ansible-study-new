@@ -1,0 +1,80 @@
+---
+# file: roles/mon-amexecutor/tasks/main.yml
+#
+# docker-image: pull image from the list
+- name: mon-amexecutor | pull docker images
+  docker_image:
+    name: "{{ amexecutor_image }}"
+    state: present
+
+# make sure directories exists
+- name: mon-amexecutor | make sure direcoties needed by mon-amexecutor exists
+  file:
+    path: "/hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - scripts
+    - restore
+
+#
+# amexecutor
+#
+# copy: copy files for amexecutor
+- name: mon-amexecutor | copy files for amexecutor
+  copy:
+    src: amexecutor/
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/scripts/
+    force: yes
+    owner: root
+    group: root
+    mode: 0755
+
+# template: copy env_file for amexecutor
+- name: mon-amexecutor | copy env_file for amexecutor
+  template:
+    src: env_file.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+
+# docker-container: run amexecutor
+- name: mon-amexecutor | run amexecutor
+  docker_container:
+    name: "{{ inventory_hostname|lower|replace('-','_') }}"
+    hostname: "{{ inventory_hostname|lower|replace('-','_') }}"
+    image: "{{ amexecutor_image }}"
+    env_file: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+    volumes:
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/scripts/:/am-executor/scripts/
+    ports:
+      - "0.0.0.0:{{ amexecutor_expose_port }}:{{ amexecutor_listen_port }}"
+    dns_servers:
+      - "{{ hostvars[groups['dns-server'].0].ansible_host }}"
+      - "{{ hostvars[groups['dns-server'].1].ansible_host }}"
+    dns_search_domains:
+      - "{{ dnsmasq_domain }}"
+    labels:
+      com.jcloud.group: "monitoring"
+      com.jcloud.nodetype: "amexecutor"
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for amexecutor
+- name: mon-amexecutor | generate restore script for amexecutor
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/run-{{ inventory_hostname|lower|replace('-','_') }}.sh
+    mode: 0755
+
+# cron: setup cron jobs for backup of amexecutor
+#       ONLY satinize the file name for /etc/cron.d, cause '.' is not supported!!
+- name: mon-amexecutor | setup cron jobs for backup of amexecutor
+  cron:
+    name: backup /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/
+    minute: "{{ ( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ (( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 3) + 1 }}"
+    user: root
+    job: "/usr/local/bin/monitoring-backup.sh {{ inventory_hostname|lower|replace('-','_') }}"
+    cron_file: "{{ inventory_hostname|lower|replace('-','_')|replace('.','_') }}-backup"

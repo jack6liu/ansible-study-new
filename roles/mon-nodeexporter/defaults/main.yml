@@ -1,0 +1,6 @@
+---
+# file: roles/mon-nodeexporter/defaults/main.yml
+nodeexporter_image: registry.hfc.test.io:5000/prom/nodeexporter:latest
+
+nodeexporter_listen_port: 4321
+nodeexporter_expose_port: 9100

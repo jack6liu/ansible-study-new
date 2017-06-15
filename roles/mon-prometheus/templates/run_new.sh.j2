@@ -1,0 +1,50 @@
+#/bin/bash
+help() {
+    echo "help:"
+    echo "    ./run-{{ inventory_hostname|lower|replace('-','_') }}.sh [OPTIONS]"
+    echo "    [OPTIONS]"
+    echo "    --force -> to remove existing docker instance, then deploy new one."
+    echo "    --safe  -> will not remove existing docker instance with same name."
+    exit 0
+}
+
+run_container() {
+    docker run      \
+      --name {{ inventory_hostname|lower|replace('-','_') }}        \
+      --hostname {{ inventory_hostname|lower|replace('-','_') }}        \
+      --volume /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/:/etc/prometheus/      \
+      --volume /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/data/:/prometheus/     \
+      --publish 0.0.0.0:{{ prometheus_expose_port }}:9090       \
+      --dns {{ hostvars[groups['dns-server'].0].ansible_host }}     \
+      --dns {{ hostvars[groups['dns-server'].1].ansible_host }}     \
+      --dns-search {{ dnsmasq_domain }}     \
+      --label com.jcloud.group="monitoring"     \
+      --label com.jcloud.nodetype="prometheus"      \
+      --restart always      \
+      --detach      \
+      {{ prometheus_image }}        \
+      -config.file=/etc/prometheus/prometheus.yml       \
+      -storage.local.path=/prometheus       \
+      -storage.local.target-heap-size=268435456     \
+      -query.staleness-delta=10s        \
+      -web.external-url=http://{{ansible_host}}:{{ prometheus_expose_port }}
+
+}
+echo ">> BEGIN"
+if [[ $# != '1' ]]; then
+    echo "[ERROR] Only take one args."
+    echo "      You enter $# args --> \"$@\""
+    echo ""
+    help
+fi
+if [[ "$1" == "--force" ]]; then
+    echo ">> Deleting existing {{ inventory_hostname|lower|replace('-','_') }} ..."
+    docker rm -f {{ inventory_hostname|lower|replace('-','_') }}
+    echo ">> Try to run new {{ inventory_hostname|lower|replace('-','_') }} ..."
+elif [[ "$1" == "--safe" ]]; then
+    echo ">> Try to run new {{ inventory_hostname|lower|replace('-','_') }} ..."
+else
+    help
+fi
+run_container
+echo ">> END"

@@ -1,0 +1,7 @@
+---
+# file: inventories/prod/group_vars/fabric-ca.yml
+
+ca_listen_port: 7054
+ca_expose_port: 7054
+ca_tls_enabled: false
+#ca_org_id: org1.hfc.test.io

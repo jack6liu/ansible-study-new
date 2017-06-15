@@ -1,0 +1,6 @@
+---
+# file: roles/mon-cadvisor/defaults/main.yml
+cadvisor_image: registry.hfc.test.io:5000/google/cadvisor:latest
+
+cadvisor_listen_port: 8080
+cadvisor_expose_port: 8080

@@ -1,0 +1,41 @@
+# Logging level
+CORE_LOGGING_LEVEL={{ peer_log_level }}
+# Peer settings
+CORE_PEER_ID={{ inventory_hostname|lower|replace('-','_') }}
+CORE_PEER_NETWORKID={{ peer_network_id | lower }}
+CORE_PEER_LISTENADDRESS={{ inventory_hostname|lower|replace('-','_') }}:{{ peer_listen_port }}
+CORE_PEER_ADDRESS={{ inventory_hostname|lower|replace('-','_') }}:{{ peer_listen_port }}
+CORE_PEER_ADDRESSAUTODETECT={{ peer_addressautodetect }}
+# Gossip settings
+#CORE_PEER_GOSSIP_BOOTSTRAP={{ peer_gossip_ip }}:{{ peer_gossip_expose_port }}
+CORE_PEER_GOSSIP_BOOTSTRAP={{ inventory_hostname|lower|replace('-','_') }}:{{ peer_gossip_port }}
+CORE_PEER_GOSSIP_USELEADERELECTION={{ peer_gossip_useleaderelection }}
+CORE_PEER_GOSSIP_ORGLEADER={{ peer_gossip_orgleader }}
+CORE_PEER_GOSSIP_ENDPOINT={{ inventory_hostname|lower|replace('-','_') }}:{{ peer_gossip_port }}
+CORE_PEER_GOSSIP_EXTERNALENDPOINT={{ inventory_hostname|lower|replace('-','_') }}:{{ peer_gossip_port }}
+CORE_PEER_GOSSIP_SKIPHANDSHAKE={{ peer_gossip_skiphandshake }}
+#CORE_PEER_GOSSIP_SKIPBLOCKVERIFICATION=true
+# Committer settings
+CORE_PEER_COMMITTER_ENABLED=true
+# Event settings
+CORE_PEER_EVENTS_ADDRESS={{ inventory_hostname|lower|replace('-','_') }}:{{ peer_events_port }}
+# TLS
+CORE_PEER_TLS_ENABLED={{ peer_tls_enabled }}
+CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/configtx/tls/server.key
+CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/configtx/tls/server.crt
+CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/configtx/tls/ca.crt
+# Msp settings
+CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/configtx/msp/
+CORE_PEER_LOCALMSPID={{ peer_msp_id }}
+CORE_PEER_PROFILE_ENABLED={{ peer_profile_enabled }}
+# VM settings
+CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+CORE_NEXT=true
+CORE_PEER_ENDORSER_ENABLED=true
+CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE={{ vm_docker_hostconfig_networkmode }}
+CORE_VM_DOCKER_HOSTCONFIG_DNS={{ hostvars[groups['dns-server'].0].ansible_host }} {{ hostvars[groups['dns-server'].1].ansible_host }}
+# Ledger settings
+CORE_LEDGER_STATE_STATEDATABASE={{ ledger_state_database }}
+CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS={{ couchdb_expose_ip }}:{{ couchdb_expose_port }}
+CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME={{ couchdb_user }}
+CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD={{ couchdb_password }}

@@ -1,0 +1,7 @@
+---
+# file: roles/fabric-couchdb/defaults/main.yml
+#
+couchdb_expose_port: 5984
+couchdb_listen_port: 5984
+couchdb_user: admin
+couchdb_password: 03cf8b1c37e1

@@ -1,0 +1,124 @@
+---
+# file: inventories/prod/group_vars/all.yml
+#
+# hfc_images used in tasks
+#
+#   MUST:
+#     - tags,
+#         - latest tags must be the first one, which is used by running docker containers
+#         - if no tags, must put `[]` due to the playbook need an empty list value
+#
+hfc_images:
+  couchdb:
+    image: registry.hfc.test.io:5000/fabric/fabric-couchdb:x86_64-1.0.0-snapshot-56b6d12
+    tags:
+      - hyperledger/fabric-couchdb:latest
+  baseos:
+    image: hyperledger/fabric-baseos:x86_64-0.3.0
+    tags: []
+  baseimage:
+    image: hyperledger/fabric-baseimage:x86_64-0.3.0
+    tags: []
+  ca:
+    image: registry.hfc.test.io:5000/fabric/fabric-ca:x86_64-1.0.0-snapshot-f0f86b7
+    tags:
+      - hyperledger/fabric-ca:latest
+  ccenv:
+    image: registry.hfc.test.io:5000/fabric/fabric-ccenv:x86_64-1.0.0-snapshot-56b6d12
+    tags:
+      - hyperledger/fabric-ccenv:latest
+      - hyperledger/fabric-ccenv:x86_64-1.0.0-snapshot-56b6d12
+  orderer:
+    image: registry.hfc.test.io:5000/fabric/fabric-orderer:x86_64-1.0.0-snapshot-56b6d12
+    tags:
+      - hyperledger/fabric-orderer:latest
+  peer:
+    image: registry.hfc.test.io:5000/fabric/fabric-peer:x86_64-1.0.0-snapshot-56b6d12
+    tags:
+      - hyperledger/fabric-peer:latest
+
+
+common_apt_pkgs:
+  - jq
+  - python-pip
+  - apt-transport-https
+  - wget
+  - ca-certificates
+  - vim
+  - curl
+  - xfsprogs
+  - python-software-properties
+
+docker_registry_local_mirror_url: http://registry.hfc.test.io:5000
+
+#
+# dnsmasq
+#
+dnsmasq_image: registry.hfc.test.io:5000/prom/dnsmasq:latest
+dnsmasq_domain: hfc.test.io
+
+cache_size: 0
+dns_forward_max: 300
+dns_forward_list:
+  - 223.5.5.5
+  - 223.6.6.6
+
+#
+# prometheus
+#
+prometheus_image: registry.hfc.test.io:5000/prom/prometheus:latest
+
+#prometheus_listen_port: 9090
+prometheus_expose_port: 9090
+
+#
+# alertmanager
+#
+alertmanager_image: registry.hfc.test.io:5000/prom/alertmanager:latest
+
+alertmanager_listen_port: 9093
+alertmanager_expose_port: 9093
+
+smtp_from_email_account: alertmanager@hfc.test.io
+smtp_smarthost_address: 192.168.10.7:25
+smtp_tls_enabled: false
+receiver_email_account: liuchenglong3@jd.com
+
+alert_group_wait: 30s
+alert_group_interval: 3m
+alert_repeat_interval: 1h
+
+#
+# grafana
+#
+grafana_image: registry.hfc.test.io:5000/grafana/grafana:latest
+
+grafana_listen_port: 3000
+grafana_expose_port: 9095
+grafana_admin_user: admin
+grafana_admin_password: P@ssw0rd
+grafana_allow_sign_up: false
+
+#
+# amexecutor
+#
+amexecutor_image: registry.hfc.test.io:5000/prom/prom-am-executor:latest
+
+amexecutor_listen_port: 8088
+amexecutor_expose_port: 8088
+
+#
+# for mon-nodeexporter
+#
+nodeexporter_image: registry.hfc.test.io:5000/prom/nodeexporter:latest
+
+nodeexporter_listen_port: 4321
+nodeexporter_expose_port: 9100
+
+#
+# for mon-cadvisor
+#
+cadvisor_image: registry.hfc.test.io:5000/google/cadvisor:latest
+
+cadvisor_listen_port: 8080
+cadvisor_expose_port: 8080

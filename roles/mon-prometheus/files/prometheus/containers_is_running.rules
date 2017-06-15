@@ -1,0 +1,11 @@
+ALERT container_is_down
+  IF jcloud_docker_container_is_running != 0
+  FOR 15s
+  LABELS {
+    severity = "critical" ,
+    action = "recover"
+  }
+  ANNOTATIONS {
+    summary= "container {{ $labels.name }} is down",
+    description= "container {{ $labels.name }} with ID {{ $labels.id }} on {{ $labels.instance }} is {{ $labels.state }} -- {{ $labels.status }} ."
+  }

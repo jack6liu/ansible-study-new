@@ -1,0 +1,6 @@
+FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/configtx/{{ inventory_hostname|lower|replace('-','_') }}-cert.pem
+FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/configtx/{{ inventory_hostname|lower|replace('-','_') }}-key.pem
+FABRIC_CA_SERVER_TLS_ENABLED={{ ca_tls_enabled }}
+FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/configtx/{{ inventory_hostname|lower|replace('-','_') }}-cert.pem
+FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/configtx/{{ inventory_hostname|lower|replace('-','_') }}-key.pem

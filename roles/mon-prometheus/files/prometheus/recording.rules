@@ -1,0 +1,29 @@
+jcloud_container_cpu_usage_sum1m =
+    sum(rate(container_cpu_usage_seconds_total{image!=''}[1m]))
+    by (name, instance, container_label_com_jcloud_group, container_label_com_jcloud_nodetype)
+
+jcloud_container_cpu_usage_sum5m =
+    sum(rate(container_cpu_usage_seconds_total{image!=''}[5m]))
+    by (id, name, image, container_label_com_jcloud_group, container_label_com_jcloud_nodetype, instance, job)
+
+jcloud_container_cpu_usage_sum15m =
+    sum(rate(container_cpu_usage_seconds_total{image!=''}[15m]))
+    by (id, name, image, container_label_com_jcloud_group, container_label_com_jcloud_nodetype, instance, job)
+
+jcloud_node_cpu_usage_sum1m =
+    1 - (avg(irate(node_cpu{mode="idle"}[1m])) by (instance))
+
+jcloud_node_cpu_usage_sum5m =
+    1 - (avg(irate(node_cpu{mode="idle"}[5m])) by (instance))
+
+jcloud_node_cpu_usage_sum15m =
+    1 - (avg(irate(node_cpu{mode="idle"}[15m])) by (instance))
+
+jcloud_node_mem_usage =
+    1 - (node_memory_MemFree + node_memory_Buffers + node_memory_Cached) / node_memory_MemTotal
+
+jcloud_node_docker_storage_usage =
+    1 - node_filesystem_free{fstype="overlay"} / node_filesystem_size{fstype="overlay"}
+
+jcloud_node_data_storage_usage =
+    1 - node_filesystem_free{fstype="xfs",mountpoint=~"/rootfs/hfc-data"} / node_filesystem_size{fstype="xfs",mountpoint=~"/rootfs/hfc-data"}

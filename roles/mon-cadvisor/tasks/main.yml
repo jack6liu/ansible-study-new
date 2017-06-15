@@ -1,0 +1,81 @@
+---
+# file: roles/mon-cadvisor/tasks/main.yml
+#
+# docker-image: pull image from the list
+- name: mon-cadvisor | pull docker images
+  docker_image:
+    name: "{{ cadvisor_image }}"
+    state: present
+
+# make sure directories exists
+- name: mon-cadvisor | make sure direcoties needed by mon-cadvisor exists
+  file:
+    path: "/hfc-data/cadvisor/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - etc
+    - restore
+
+#
+# cadvisor
+#
+# copy: copy files for cadvisor
+- name: mon-cadvisor | copy files for cadvisor
+  copy:
+    src: cadvisor/
+    dest: /hfc-data/cadvisor/etc/
+    force: yes
+    owner: root
+    group: root
+    mode: 0644
+
+
+# docker-container: run cadvisor
+- name: mon-cadvisor | run cadvisor
+  docker_container:
+    name: cadvisor
+    hostname: cadvisor
+    image: "{{ cadvisor_image }}"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /hfc-data/cadvisor/etc/cadvisor.htpasswd:/etc/cadvisor/cadvisor.htpasswd
+    command:
+      --http_auth_file /etc/cadvisor/cadvisor.htpasswd
+      --http_auth_realm Restricted
+    ports:
+      - "0.0.0.0:{{ cadvisor_expose_port }}:8080"
+    network_mode: host
+    dns_servers:
+      - "{{ hostvars[groups['dns-server'].0].ansible_host }}"
+      - "{{ hostvars[groups['dns-server'].1].ansible_host }}"
+    dns_search_domains:
+      - "{{ dnsmasq_domain }}"
+    labels:
+      com.jcloud.group: "monitoring"
+      com.jcloud.nodetype: "cadvisor"
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for cadvisor
+- name: mon-cadvisor | generate restore script for cadvisor
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/cadvisor/restore/run-cadvisor.sh
+    mode: 0755
+
+# cron: setup cron jobs for backup of cadvisor
+- name: mon-cadvisor | setup cron jobs for backup of cadvisor
+  cron:
+    name: backup /hfc-data/cadvisor/
+    minute: "{{ ( ansible_host | hash('md5') | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ ( ansible_host | hash | list | map('int',0,128) | sum ) % 3 + 1 }}"
+    user: root
+    job: "/usr/local/bin/monitoring-backup.sh cadvisor"
+    cron_file: "cadvisor-backup"

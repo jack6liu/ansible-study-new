@@ -1,0 +1,67 @@
+# file: inventories/prod/hosts
+#
+### -- dnsmasq --
+[dns-server]
+dnsmasq1.hfc.test.io	        ansible_host=10.10.0.11   dns_local_ip=192.168.10.7   registry_local_ip=192.168.10.7
+dnsmasq2.hfc.test.io	        ansible_host=10.10.0.12  dns_local_ip=192.168.200.4  registry_local_ip=192.168.200.4
+
+### -- monitor-server --
+[prometheus]
+prometheus1.hfc.test.io      ansible_host=10.10.0.11   dns_local_ip=192.168.10.7
+
+[alertmanager]
+alertmanager1.hfc.test.io    ansible_host=10.10.0.11   dns_local_ip=192.168.10.7
+
+[grafana]
+grafana1.hfc.test.io         ansible_host=10.10.0.11   dns_local_ip=192.168.10.7
+
+[amexecutor]
+#
+# amexecutor is recommended to deploy toghether with alertmanager,
+#            so can be accessed by the private IP address
+#
+amexecutor1.hfc.test.io      ansible_host=10.10.0.11  amexecutor_private_ip=192.168.10.7   dns_local_ip=192.168.10.7
+
+[monitor-server:children]
+prometheus
+alertmanager
+grafana
+amexecutor
+
+### -- fabric-couchdb --
+#[fabric-couchdb]
+#couchdb1.hfc.test.io        ansible_host=10.10.0.13   dns_local_ip=192.168.10.7
+
+### -- fabric-ca --
+[fabric-ca_peerOrg1]
+ca.org1.hfc.test.io          ansible_host=10.10.0.14  ca_org_id=org1.hfc.test.io   dns_local_ip=192.168.10.7
+
+[fabric-ca_peerOrg2]
+ca.org2.hfc.test.io          ansible_host=10.10.0.12  ca_org_id=org2.hfc.test.io   dns_local_ip=192.168.200.4
+
+[fabric-ca:children]
+fabric-ca_peerOrg1
+fabric-ca_peerOrg2
+
+### -- fabric-orderer --
+[fabric-ordererOrg1]
+orderer.hfc.test.io          ansible_host=10.10.0.13   dns_local_ip=192.168.10.7
+
+[fabric-orderer:children]
+fabric-ordererOrg1
+
+### -- fabric-peer --
+[fabric-peerOrg1]
+peer1.org1.hfc.test.io        ansible_host=10.10.0.15  peer_gossip_ip=10.10.0.15   dns_local_ip=192.168.10.7
+peer2.org1.hfc.test.io        ansible_host=10.10.0.16  peer_gossip_ip=10.10.0.15   dns_local_ip=192.168.200.4
+peer3.org1.hfc.test.io        ansible_host=10.10.0.17  peer_gossip_ip=10.10.0.15   dns_local_ip=192.168.10.7
+
+[fabric-peerOrg2]
+peer1.org2.hfc.test.io        ansible_host=10.10.0.18  peer_gossip_ip=10.10.0.18   dns_local_ip=192.168.200.4
+peer2.org2.hfc.test.io        ansible_host=10.10.0.19  peer_gossip_ip=10.10.0.18   dns_local_ip=192.168.10.7
+peer3.org2.hfc.test.io        ansible_host=10.10.0.20  peer_gossip_ip=10.10.0.18   dns_local_ip=192.168.200.4
+
+[fabric-peer:children]
+fabric-peerOrg1
+fabric-peerOrg2
+

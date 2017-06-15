@@ -1,0 +1,6 @@
+---
+# file: roles/mon-prometheus/defaults/main.yml
+prometheus_image: registry.hfc.test.io:5000/prom/prometheus:latest
+
+#prometheus_listen_port: 9090
+prometheus_expose_port: 9090

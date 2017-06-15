@@ -1,0 +1,76 @@
+---
+# file: roles/system-common/tasks/main.yml
+#
+# file: rm /var/lib/cloud/instance/warnings/non_ec2_md
+- name: system-common | rm /var/lib/cloud/instance/warnings/non_ec2_md
+  shell: if [ -e {{ item }} ]; then rm -rf {{ item }}/* ; fi
+  with_items:
+    - /var/lib/cloud/instance/warnings/non_ec2_md
+
+# copy: config /etc/apt/resources.list
+- name: system-common | config apt repository
+  copy:
+    src: sources.list
+    dest: /etc/apt/sources.list
+    force: yes
+    owner: root
+    group: root
+    mode: 0644
+
+# apt: make sure packages installed
+- name: system-common | install apt packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ common_apt_pkgs }}"
+
+# shell: add apt-key
+- name: system-common | add apt-key for docker-ce
+  #shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+  apt_key:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    state: present
+
+# add docker-ce repository
+- name: system-common | add apt-repository for docker-ce
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+    state: present
+
+# apt: install docker-ce
+- name: system-common | install docker-ce
+  apt:
+    name: docker-ce
+    state: present
+
+# systemd: enable and stop docker
+- name: system-common | enable docker service
+  systemd:
+    name: docker
+    enabled: yes
+    state: stopped
+
+# template: config daemon.json for docker
+- name: system-common | config daemon.json for docker
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    force: yes
+    owner: root
+    group: root
+    mode: 0644
+
+# systemd: start docker
+- name: system-common | start docker service
+  systemd:
+    name: docker
+    state: started
+
+# pip: install pip packages
+- name: system-common | install pip packages
+  pip:
+    name: "{{ item.name }}"
+    state: latest
+  with_items:
+    - name: pip
+    - name: docker-py

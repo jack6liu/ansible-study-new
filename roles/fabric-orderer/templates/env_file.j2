@@ -1,0 +1,21 @@
+# General
+ORDERER_GENERAL_LOGLEVEL={{ orderer_log_level }}
+ORDERER_GENERAL_LEDGERTYPE=file
+ORDERER_GENERAL_LISTENADDRESS={{ inventory_hostname|lower|replace('-','_') }}
+ORDERER_GENERAL_LISTENPORT={{ orderder_listen_port }}
+ORDERER_GENERAL_GENESISMETHOD=file
+ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/orderer.block
+ORDERER_GENERAL_LOCALMSPID={{ orderer_msp_id }}
+ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/configtx/msp/
+# TLS
+ORDERER_GENERAL_TLS_ENABLED={{ orderer_tls_enabled }}
+ORDERER_GENERAL_TLS_PRIVATEKEY=/etc/hyperledger/configtx/tls/server.key
+ORDERER_GENERAL_TLS_CERTIFICATE=/etc/hyperledger/configtx/tls/server.crt
+ORDERER_GENERAL_TLS_ROOTCAS=[/etc/hyperledger/configtx/tls/ca.crt]
+# Fileledger
+ORDERER_FILELEDGER_LOCATION=/var/hyperledger/fileledger/
+ORDERER_FILELEDGER_PREFIX=hyperledger-fabric-ordererledger
+CONFIGTX_ORDERER_ORDERERTYPE=solo
+# GRPC
+GRPC_TRACE=all
+GRPC_VERBOSITY={{ grpc_verbosity }}

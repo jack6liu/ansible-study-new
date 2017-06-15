@@ -1,0 +1,78 @@
+---
+# file: roles/mon-alertmanager/tasks/main.yml
+#
+# docker-image: pull image from the list
+- name: mon-alertmanager | pull docker images
+  docker_image:
+    name: "{{ alertmanager_image }}"
+    state: present
+
+# make sure directories exists
+- name: mon-alertmanager | make sure direcoties needed by mon-alertmanager exists
+  file:
+    path: "/hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - etc
+    - data
+    - restore
+
+#
+# alertmanager
+#
+# template: copy files for alertmanager
+- name: mon-alertmanager | copy files for alertmanager
+  template:
+    src: alertmanager.yml.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/alertmanager.yml
+    force: yes
+    owner: root
+    group: root
+    mode: 0644
+
+# docker-container: run alertmanager
+- name: mon-alertmanager | run alertmanager
+  docker_container:
+    name: "{{ inventory_hostname|lower|replace('-','_') }}"
+    hostname: "{{ inventory_hostname|lower|replace('-','_') }}"
+    image: "{{ alertmanager_image }}"
+    volumes:
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      -config.file=/etc/alertmanager/alertmanager.yml
+      -storage.path=/alertmanager
+      -web.external-url=http://{{ ansible_host }}:{{ alertmanager_expose_port }}
+    ports:
+      - "{{ alertmanager_expose_port }}:9093"
+    dns_servers:
+      - "{{ hostvars[groups['dns-server'].0].ansible_host }}"
+      - "{{ hostvars[groups['dns-server'].1].ansible_host }}"
+    dns_search_domains:
+      - "{{ dnsmasq_domain }}"
+    labels:
+      com.jcloud.group: "monitoring"
+      com.jcloud.nodetype: "alertmanager"
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for alertmanager
+- name: mon-alertmanager | generate restore script for alertmanager
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/run-{{ inventory_hostname|lower|replace('-','_') }}.sh
+    mode: 0755
+
+# cron: setup cron jobs for backup of alertmanager
+#       ONLY satinize the file name for /etc/cron.d, cause '.' is not supported!!
+- name: mon-alertmanager | setup cron jobs for backup of alertmanager
+  cron:
+    name: backup /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}
+    minute: "{{ ( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ (( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 3) + 1 }}"
+    user: root
+    job: "/usr/local/bin/monitoring-backup.sh {{ inventory_hostname|lower|replace('-','_') }}"
+    cron_file: "{{ inventory_hostname|lower|replace('-','_')|replace('.','_') }}-backup"

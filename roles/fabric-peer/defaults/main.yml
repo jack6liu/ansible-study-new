@@ -1,0 +1,26 @@
+---
+# file: roles/fabric-peer/defaults/main.yml
+peer_log_level: INFO
+peer_network_id: jcloud
+peer_org_id: org1.hfc.test.io
+peer_listen_port: 7051
+peer_expose_listen_port: 7051
+peer_events_port: 7053
+peer_expose_events_port: 7053
+peer_addressautodetect: false
+peer_tls_enabled: true
+peer_gossip_useleaderelection: true
+peer_gossip_orgleader: false
+peer_gossip_ip: peer1
+peer_gossip_port: 7051
+peer_gossip_expose_port: 7051
+peer_gossip_skiphandshake: true
+peer_msp_id: Org1MSP
+peer_profile_enabled: false
+vm_docker_hostconfig_networkmode: bridge
+ledger_state_database: goleveldb
+#ledger_state_database: CouchDB
+couchdb_expose_ip: couchdb
+couchdb_expose_port: 5984
+couchdb_user: admin
+couchdb_password: 03cf8b1c37e1

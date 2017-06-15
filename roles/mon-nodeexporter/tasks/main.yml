@@ -1,0 +1,74 @@
+---
+# file: roles/mon-nodeexporter/tasks/main.yml
+#
+# docker-image: pull image from the list
+- name: mon-nodeexporter | pull docker images
+  docker_image:
+    name: "{{ nodeexporter_image }}"
+    state: present
+
+# make sure directories exists
+- name: mon-nodeexporter | make sure direcoties needed by mon-nodeexporter exists
+  file:
+    path: "/hfc-data/nodeexporter/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - restore
+    - textfile
+
+#
+# nodeexporter
+#
+# docker-container: run nodeexporter
+- name: mon-nodeexporter | run nodeexporter
+  docker_container:
+    name: nodeexporter
+    hostname: nodeexporter
+    image: "{{ nodeexporter_image }}"
+    env:
+      NODE_EXPORTER_LISTEN_PORT: "{{ nodeexporter_listen_port }}"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /hfc-data/nodeexporter/textfile:/textfile
+    command:
+      -collector.procfs /host/proc
+      -collector.sysfs /host/sys
+      -collector.filesystem.ignored-mount-points "^/(sys|proc|dev|host|etc)($|/)"
+      -collector.textfile.directory "/textfile"
+    ports:
+      - "0.0.0.0:{{ nodeexporter_expose_port }}:9100"
+    network_mode: host
+    dns_servers:
+      - "{{ hostvars[groups['dns-server'].0].ansible_host }}"
+      - "{{ hostvars[groups['dns-server'].1].ansible_host }}"
+    dns_search_domains:
+      - "{{ dnsmasq_domain }}"
+    labels:
+      com.jcloud.group: "monitoring"
+      com.jcloud.nodetype: "nodeexporter"
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for nodeexporter
+- name: mon-nodeexporter | generate restore script for nodeexporter
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/nodeexporter/restore/run-nodeexporter.sh
+    mode: 0755
+
+# cron: setup cron jobs for backup of nodeexporter
+- name: mon-nodeexporter | setup cron jobs for backup of nodeexporter
+  cron:
+    name: backup /hfc-data/nodeexporter/
+    minute: "{{ ( ansible_host | hash('sha1') | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ ( ansible_host | hash | list | map('int',0,128) | sum ) % 3 + 1 }}"
+    user: root
+    job: "/usr/local/bin/monitoring-backup.sh nodeexporter"
+    cron_file: "nodeexporter-backup"

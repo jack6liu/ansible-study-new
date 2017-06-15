@@ -1,0 +1,15 @@
+---
+# file: roles/fabric-common/defaults/main.yml
+
+common_apt_pkgs:
+  - jq
+  - python-pip
+  - apt-transport-https
+  - wget
+  - ca-certificates
+  - vim
+  - curl
+  - xfsprogs
+  - python-software-properties
+
+docker_registry_local_mirror_url: http://registry.hfc.test.io:5000

@@ -1,0 +1,25 @@
+---
+# file: prod.yml
+#- name: Run roles - fabric-couchdb
+#  hosts: fabric-couchdb
+#  roles:
+#    - fabric-common
+#    - fabric-couchdb
+
+- name: Run roles - fabric-ca
+  hosts: fabric-ca
+  roles:
+    - fabric-common
+    - fabric-ca
+
+- name: Run roles - fabric-orderer
+  hosts: fabric-orderer
+  roles:
+    - fabric-common
+    - fabric-orderer
+
+- name: Run roles - fabrice-peer
+  hosts: fabric-peer
+  roles:
+    - fabric-common
+    - fabric-peer

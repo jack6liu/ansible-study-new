@@ -1,0 +1,3 @@
+{% for host in groups['all'] %}
+address=/{{ hostvars[host].inventory_hostname|lower|replace('-','_') }}/{{ hostvars[host].ansible_host }}
+{% endfor -%}

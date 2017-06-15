@@ -1,0 +1,43 @@
+---
+# file: roles/fabric-common/tasks/main.yml
+#
+# shell: delete containers
+- name: fabric-common | remove all existing containers
+  shell: CONTAINERS=$(docker ps -a --format "{{ '{{' }} .Names {{ '}}' }}" | awk '/{{ inventory_hostname|lower|replace('-','_') }}/') ; if [ "${CONTAINERS}" ]; then docker rm -f ${CONTAINERS} 2>&1 > /dev/null; exit 0 ; fi
+
+# shell: delete images
+- name: fabric-common | remove all unnecessary images
+  shell: IMGS=$(docker images -a | awk '/<none>|-{{ inventory_hostname|lower|replace('-','_') }}.*-v.*/ {print $3}') ; if [ "${IMGS}" ]; then docker rmi -f ${IMGS} 2>&1 > /dev/null ; exit 0 ; fi
+
+# docker-image: pull image from the list
+- name: fabric-common | pull docker images
+  docker_image:
+    name: "{{ item.value.image }}"
+    state: present
+  with_dict: "{{ hfc_images }}"
+
+# shell: retag images
+- name: fabric-common | retag docker images
+  shell: for TAG in {{ item.1 }}; do docker tag {{ item.0.image }} $TAG; done
+  with_subelements:
+    - "{{ hfc_images }}"
+    - tags
+  when: "{{ item.1 | count }} >= 1"
+
+# shell: do some clean up
+- name: fabric-common | cleanup existing data
+  shell: if [ -e "/hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}" ]; then rm -rf /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}/ ; fi
+  with_items:
+    - configtx
+    - data
+    - restore
+
+# copy backup script for hyperledger fabric
+- name: fabric-common | copy fabric-backup.sh for hyperledger fabric
+  copy:
+    src: fabric-backup.sh
+    dest: /usr/local/bin/fabric-backup.sh
+    force: yes
+    owner: root
+    group: root
+    mode: 0755

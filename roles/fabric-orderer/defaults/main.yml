@@ -1,0 +1,10 @@
+---
+# file: roles/fabric-orderer/defaults/main.yml
+
+orderer_log_level: INFO
+orderder_listen_port: 7050
+orderer_expose_port: 7050
+orderer_msp_id: OrdererMSP
+orderer_org_id: hfc.test.io
+orderer_tls_enabled: true
+grpc_verbosity: debug

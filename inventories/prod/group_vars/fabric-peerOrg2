@@ -1,0 +1,5 @@
+---
+# file: inventories/prod/group_vars/fabric-peerOrg2.yml
+
+peer_org_id: org2.hfc.test.io
+peer_msp_id: Org2MSP

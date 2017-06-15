@@ -1,0 +1,10 @@
+---
+# file: roles/dnsmasq/defaults/main.yml
+dnsmasq_image: registry.hfc.test.io:5000/prom/dnsmasq:latest
+dnsmasq_domain: hfc.test.io
+
+cache_size: 0
+dns_forward_max: 300
+dns_forward_list:
+  - 223.5.5.5
+  - 223.6.6.6

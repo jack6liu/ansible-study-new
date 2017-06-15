@@ -1,0 +1,8 @@
+---
+# file: roles/mon-amexecutor/defaults/main.yml
+amexecutor_image: registry.hfc.test.io:5000/prom/prom-am-executor:latest
+
+amexecutor_listen_port: 8088
+amexecutor_expose_port: 8088
+
+amexecutor_private_ip: 127.0.0.1

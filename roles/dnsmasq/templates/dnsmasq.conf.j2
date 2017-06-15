@@ -1,0 +1,18 @@
+# general config
+bogus-priv
+
+domain={{ dnsmasq_domain }}
+expand-hosts
+
+local=/{{ dnsmasq_domain }}/
+
+# for hosts records
+conf-dir=/etc/dnsmasq.d,*.conf
+
+# dont cache any query
+cache-size={{ cache_size }}
+no-negcache
+dns-forward-max={{ dns_forward_max }}
+
+# dont use /etc/resolv.conf
+resolv-file=/etc/dnsmasq.resolv.conf

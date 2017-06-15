@@ -1,0 +1,6 @@
+---
+# file: roles/fabric-ca/defaults/main.yml
+ca_listen_port: 7054
+ca_expose_port: 7054
+ca_tls_enabled: true
+ca_org_id: org1.hfc.test.io

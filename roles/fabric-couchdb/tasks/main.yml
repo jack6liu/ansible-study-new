@@ -1,0 +1,59 @@
+---
+# file: roles/fabric-couchdb/tasks/main.yml
+#
+# file: make sure directories exists
+- name: fabric-couchdb | make sure direcoties needed by fabric-couchdb exists
+  file:
+    path: "/hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - restore
+    - data
+
+# template: copy env_file for fabric-couchdb
+- name: fabric-couchdb | copy env_file for fabric-couchdb
+  template:
+    src: env_file.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+
+# docker_container: launch fabric-couchdb
+- name: fabric-couchdb | launch fabric-couchdb
+  docker_container:
+    name: "{{ inventory_hostname|lower|replace('-','_') }}"
+    hostname: "{{ inventory_hostname|lower|replace('-','_') }}"
+    image: "{{ hfc_images.couchdb.tags.0 }}"
+    env_file: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/env_file
+    ports:
+      - "0.0.0.0:{{ couchdb_expose_port }}:{{ couchdb_listen_port }}"
+    dns_servers:
+      - "{{ hostvars[groups['dns-server'].0].ansible_host }}"
+      - "{{ hostvars[groups['dns-server'].1].ansible_host }}"
+    dns_search_domains:
+      - "{{ dnsmasq_domain }}"
+    labels:
+      com.jcloud.group: "fabric"
+      com.jcloud.nodetype: "couchdb"
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for fabric-couchdb
+- name: fabric-couchdb | generate restore script for fabric-couchdb
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/run-{{ inventory_hostname|lower|replace('-','_') }}.sh
+    mode: 0755
+
+# cron: setup cron jobs for backup of fabric-couchdb
+#       ONLY satinize the file name for /etc/cron.d, cause '.' is not supported!!
+- name: fabric-couchdb | setup cron jobs for backup of fabric-couchdb
+  cron:
+    name: backup /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}
+    minute: "{{ ( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ (( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 3) + 1 }}"
+    user: root
+    job: "/usr/local/bin/fabric-backup.sh {{ inventory_hostname|lower|replace('-','_') }}"
+    cron_file: "{{ inventory_hostname|lower|replace('-','_')|replace('.','_') }}-backup"

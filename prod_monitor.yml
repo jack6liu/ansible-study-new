@@ -1,0 +1,28 @@
+---
+# file: prod_monitor.yml
+- name: Run roles - mon-nodeexporter & mon-cadvisor
+  hosts: all
+  roles:
+    - mon-common
+    - mon-nodeexporter
+    - mon-cadvisor
+
+- name: Run roles - mon-prometheus
+  hosts: prometheus
+  roles:
+    - mon-prometheus
+
+- name: Run roles - mon-alertmanager
+  hosts: alertmanager
+  roles:
+    - mon-alertmanager
+
+- name: Run roles - mon-grafana
+  hosts: grafana
+  roles:
+    - mon-grafana
+
+- name: Run roles - mon-amexecutor
+  hosts: amexecutor
+  roles:
+    - mon-amexecutor

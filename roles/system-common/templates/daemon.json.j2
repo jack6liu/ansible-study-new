@@ -1,0 +1,9 @@
+{
+  "registry-mirrors": ["{{ docker_registry_local_mirror_url }}"],
+  "storage-driver": "overlay",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "5m",
+    "max-file": "3"
+  }
+}

@@ -1,0 +1,112 @@
+---
+# file: roles/dnsmasq/tasks/main.yml
+#
+# docker-image: pull image from the list
+- name: dnsmasq | pull docker images
+  docker_image:
+    name: "{{ dnsmasq_image }}"
+    state: present
+
+# file: make sure directories exists
+- name: dnsmasq | make sure direcoties needed by dnsmasq exists
+  file:
+    path: "/hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/{{ item }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - etc
+    - dnsmasq.d
+    - restore
+
+# template: copy etc/dnsmasq.conf
+- name: dnsmasq | copy etc/dnsmasq.conf
+  template:
+    src: dnsmasq.conf.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/dnsmasq.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+
+# template: copy etc/dnsmasq.resolv.conf
+- name: dnsmasq | copy etc/dnsmasq.resolv.conf
+  template:
+    src: dnsmasq.resolv.conf.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/dnsmasq.resolv.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+
+# template: copy dnsmasq.d/0.registry.conf
+- name: dnsmasq | copy dnsmasq.d/0.registry.conf
+  template:
+    src: registry.conf.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/dnsmasq.d/0.registry.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+
+# template: copy dnsmasq.d/0.hosts.conf
+- name: dnsmasq | copy dnsmasq.d/0.hosts.conf
+  template:
+    src: hosts.conf.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/dnsmasq.d/0.hosts.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+
+# docker-container: run dnsmasq
+- name: dnsmasq | run dnsmasq
+  docker_container:
+    name: "{{ inventory_hostname|lower|replace('-','_') }}"
+    hostname: "{{ inventory_hostname|lower|replace('-','_') }}"
+    image: "{{ dnsmasq_image }}"
+    volumes:
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/dnsmasq.d/:/etc/dnsmasq.d/
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/dnsmasq.conf:/etc/dnsmasq.conf
+      - /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/dnsmasq.resolv.conf:/etc/dnsmasq.resolv.conf
+    ports:
+      - 0.0.0.0:53:53/tcp
+      - 0.0.0.0:53:53/udp
+    capabilities:
+      - NET_ADMIN
+    #network_mode: host
+    labels:
+      com.jcloud.group: "common"
+      com.jcloud.nodetype: "dnsmasq"
+    restart_policy: always
+    restart: yes
+    state: started
+
+# template: generate restore script for dnsmasq
+- name: dnsmasq | generate restore script for dnsmasq
+  template:
+    src: run_new.sh.j2
+    dest: /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/restore/run-{{ inventory_hostname|lower|replace('-','_') }}.sh
+    mode: 0755
+
+# copy: copy backup script for dnsmasq
+- name: dnsmasq | copy dnsmasq-backup.sh for dnsmasq
+  copy:
+    src: dnsmasq-backup.sh
+    dest: /usr/local/bin/dnsmasq-backup.sh
+    force: yes
+    owner: root
+    group: root
+    mode: 0755
+
+# cron: setup cron jobs for backup of dnsmasq
+#       ONLY satinize the file name for /etc/cron.d, cause '.' is not supported!!
+- name: dnsmasq | setup cron jobs for backup of dnsmasq
+  cron:
+    name: backup /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/
+    minute: "{{ ( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 60 }}"
+    hour: "{{ (( inventory_hostname|lower|replace('-','_') | hash | list | map('int',0,128) | sum ) % 3) + 1 }}"
+    user: root
+    job: "/usr/local/bin/dnsmasq-backup.sh {{ inventory_hostname|lower|replace('-','_') }}"
+    cron_file: "{{ inventory_hostname|lower|replace('-','_')|replace('.','_') }}-backup"

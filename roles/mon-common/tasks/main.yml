@@ -1,0 +1,22 @@
+---
+# file: roles/mon-common/tasks/main.yml
+#
+# copy: copy backup script for monitoring
+- name: mon-common | copy monitoring-backup.sh for monitoring
+  copy:
+    src: monitoring-backup.sh
+    dest: /usr/local/bin/monitoring-backup.sh
+    force: yes
+    owner: root
+    group: root
+    mode: 0755
+
+# set local resolv.conf to dnsmasq nodes
+- name: mon-common | config resolvconf
+  lineinfile:
+    dest: /etc/resolvconf/resolv.conf.d/head
+    insertafter: EOF
+    line: nameserver {{ dns_local_ip }}
+
+- name: mon-common | update resolvconf
+  command: resolvconf -u

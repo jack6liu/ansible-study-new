@@ -1,0 +1,19 @@
+---
+# file: roles/mon-alertmanager/defaults/main.yml
+alertmanager_image: registry.hfc.test.io:5000/prom/alertmanager:latest
+
+alertmanager_listen_port: 9093
+alertmanager_expose_port: 9093
+
+smtp_from_email_account: alertmanager@hfc.test.io
+smtp_smarthost_address: 192.168.10.7:25
+smtp_tls_enabled: false
+receiver_email_account: liuchenglong3@jd.com
+
+alert_group_wait: 30s
+alert_group_interval: 3m
+alert_repeat_interval: 1h
+
+recover_group_wait: 15s
+recover_group_interval: 1m
+recover_repeat_interval: 3m

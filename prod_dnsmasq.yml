@@ -1,0 +1,9 @@
+---
+# file: prod.yml
+- name: Run roles - dnsmasq
+  hosts: dns-server
+  roles:
+    - dnsmasq
+  #remote_user: ubuntu
+  #become: yes
+  #become_method: sudo

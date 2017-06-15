@@ -1,0 +1,23 @@
+ALERT container_high_cpu_usage
+  IF jcloud_container_cpu_usage_sum1m * 100 > 65
+  FOR 60s
+  LABELS {
+    severity = "warning" ,
+    action = "notify"
+  }
+  ANNOTATIONS {
+    summary= "container {{ $labels.name }} high CPU usage",
+    description= "container {{ $labels.name }} on {{ $labels.instance }} CPU usage is {{ humanize $value}}%."
+  }
+
+ALERT container_high_memory_load
+  IF container_memory_usage_bytes{image!=''} > 1024 * 1024 * 1024 * 3.5
+  FOR 60s
+  LABELS {
+    severity = "warning" ,
+    action = "notify"
+  }
+  ANNOTATIONS {
+      summary = "container {{ $labels.name }} high memory usage",
+      description = "container {{ $labels.name }} on {{ $labels.instance }} memory consumption is at {{ humanize $value}}.",
+  }

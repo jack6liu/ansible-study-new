@@ -1,0 +1,45 @@
+#/bin/bash
+help() {
+    echo "help:"
+    echo "    ./run-{{ inventory_hostname|lower|replace('-','_') }}.sh [OPTIONS]"
+    echo "    [OPTIONS]"
+    echo "    --force -> to remove existing docker instance, then deploy new one."
+    echo "    --safe  -> will not remove existing docker instance with same name."
+    exit 0
+}
+
+run_container() {
+    docker run      \
+      --name {{ inventory_hostname|lower|replace('-','_') }}       \
+      --hostname {{ inventory_hostname|lower|replace('-','_') }}       \
+      --cap-add NET_ADMIN       \
+      --volume /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/dnsmasq.d/:/etc/dnsmasq.d/        \
+      --volume /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/dnsmasq.conf:/etc/dnsmasq.conf        \
+      --volume /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/etc/dnsmasq.resolv.conf:/etc/dnsmasq.resolv.conf       \
+      --publish 0.0.0.0:53:53/tcp       \
+      --publish 0.0.0.0:53:53/udp       \
+      --label com.jcloud.group="common"     \
+      --label com.jcloud.nodetype="dnsmasq"     \
+      --restart always      \
+      --detach      \
+      {{ dnsmasq_image }}
+
+}
+echo ">> BEGIN"
+if [[ $# != '1' ]]; then
+    echo "[ERROR] Only take one args."
+    echo "      You enter $# args --> \"$@\""
+    echo ""
+    help
+fi
+if [[ "$1" == "--force" ]]; then
+    echo ">> Deleting existing {{ inventory_hostname|lower|replace('-','_') }} ..."
+    docker rm -f {{ inventory_hostname|lower|replace('-','_') }}
+    echo ">> Try to run new {{ inventory_hostname|lower|replace('-','_') }} ..."
+elif [[ "$1" == "--safe" ]]; then
+    echo ">> Try to run new {{ inventory_hostname|lower|replace('-','_') }} ..."
+else
+    help
+fi
+run_container
+echo ">> END"

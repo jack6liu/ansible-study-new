@@ -1,0 +1,44 @@
+#/bin/bash
+help() {
+    echo "help:"
+    echo "    ./run-{{ inventory_hostname|lower|replace('-','_') }}.sh [OPTIONS]"
+    echo "    [OPTIONS]"
+    echo "    --force -> to remove existing docker instance, then deploy new one."
+    echo "    --safe  -> will not remove existing docker instance with same name."
+    exit 0
+}
+
+run_container() {
+    docker run  --name {{ inventory_hostname|lower|replace('-','_') }}      \
+      --hostname {{ inventory_hostname|lower|replace('-','_') }}        \
+      --env-file ./env_file     \
+      --volume /hfc-data/{{ inventory_hostname|lower|replace('-','_') }}/configtx/:/etc/hyperledger/configtx/       \
+      --publish 0.0.0.0:{{ ca_expose_port }}:{{ ca_listen_port }}       \
+      --dns {{ hostvars[groups['dns-server'].0].ansible_host }}     \
+      --dns {{ hostvars[groups['dns-server'].1].ansible_host }}     \
+      --dns-search {{ dnsmasq_domain }}     \
+      --label com.jcloud.group="fabric"     \
+      --label com.jcloud.nodetype="ca"      \
+      --restart always      \
+      --detach      \
+      {{ hfc_images.ca.tags.0 }}        \
+      fabric-ca-server start -b admin:adminpw
+}
+echo ">> BEGIN"
+if [[ $# != '1' ]]; then
+    echo "[ERROR] Only take one args."
+    echo "      You enter $# args --> \"$@\""
+    echo ""
+    help
+fi
+if [[ "$1" == "--force" ]]; then
+    echo ">> Deleting existing {{ inventory_hostname|lower|replace('-','_') }} ..."
+    docker rm -f {{ inventory_hostname|lower|replace('-','_') }}
+    echo ">> Try to run new {{ inventory_hostname|lower|replace('-','_') }} ..."
+elif [[ "$1" == "--safe" ]]; then
+    echo ">> Try to run new {{ inventory_hostname|lower|replace('-','_') }} ..."
+else
+    help
+fi
+run_container
+echo ">> END"

@@ -1,0 +1,76 @@
+global:
+  scrape_interval:      15s
+  evaluation_interval:  5s
+  scrape_timeout:       10s
+  resolve_timeout:      3m
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'jcloud_hfc'
+
+# Load and evaluate rules in this file every 'evaluation_interval' seconds.
+rule_files:
+  - "recording.rules"
+  - "targets.rules"
+  - "hosts.rules"
+  - "containers_perf.rules"
+  - "containers_is_running.rules"
+  #- "containers-up.rules"
+
+# A scrape configuration containing exactly one endpoint to scrape.
+scrape_configs:
+  - job_name: 'nodeexporter'
+    scrape_interval: 5s
+    basic_auth:
+      username: nodeexporter
+      password: nodeexporter
+    static_configs:
+    - targets:
+{% for host in groups['all'] %}
+      - "{{ hostvars[host].ansible_host }}:{{ nodeexporter_expose_port }}"
+{% endfor %}
+
+  - job_name: 'cadvisor'
+    scrape_interval: 5s
+    basic_auth:
+      username: cadvisor
+      password: cadvisor
+    static_configs:
+    - targets :
+{% for host in groups['all'] %}
+      - "{{ hostvars[host].ansible_host }}:{{ cadvisor_expose_port }}"
+{% endfor %}
+
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    basic_auth:
+      username: prometheus
+      password: prometheus
+    static_configs:
+    - targets:
+{% for host in groups['prometheus'] %}
+      - "{{ hostvars[host].ansible_host }}:{{ prometheus_expose_port }}"
+{% endfor %}
+
+alerting:
+  alertmanagers:
+  - scheme: http
+    basic_auth:
+      username: alertmanager
+      password: alertmanager
+    static_configs:
+    - targets:
+{% for host in groups['alertmanager'] %}
+      - "{{ hostvars[host].ansible_host }}:{{ alertmanager_expose_port }}"
+{% endfor %}
+
+#  - job_name: 'nginx'
+#    scrape_interval: 10s
+#    static_configs:
+#      - targets: ['nginxexporter:9113']
+
+#  - job_name: 'aspnetcore'
+#    scrape_interval: 10s
+#    static_configs:
+#      - targets: ['eventlog-proxy:5000', 'eventlog:5000']

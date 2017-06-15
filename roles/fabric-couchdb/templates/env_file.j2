@@ -1,0 +1,6 @@
+NODENAME={{ inventory_hostname|lower|replace('-','_') }}
+COUCHDB_USER={{ couchdb_user }}
+COUCHDB_PASSWORD={{ couchdb_password }}
+#COUCHDB_HTTP_BIND_ADDRESS=0.0.0.0
+#COUCHDB_HTTP_PORT={{ couchdb_listen_port }}
+#DB_URL=http://localhost:{{ couchdb_listen_port }}/member_db
